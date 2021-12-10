@@ -23,7 +23,7 @@ class CalculatorGUI:
         self.button_mul = tk.Button(self.main, text='*', padx=40, pady=20, command=lambda: self.button_click('*'))
         self.button_div = tk.Button(self.main, text='/', padx=40, pady=20, command=lambda: self.button_click('/'))
 
-        self.button_solve = tk.Button(self.main, text='=', padx=88, pady=50, command=self.solve)
+        self.button_solve = tk.Button(self.main, text='=', padx=88, pady=50, command=self.equal_button)
         self.button_clear = tk.Button(self.main, text='Clear', padx=78, pady=20, command=self.clear_button)
 
         # Rendering widgets
@@ -62,35 +62,74 @@ class CalculatorGUI:
     def clear_button(self):
         self.text.delete(0, END)
 
-    # Triggers after '=' button click
-    def solve(self):
+    def equal_button(self):
         num = self.text.get()
-        operators = ['/', '*', '-', '+']
         try:
-            num_list = self.create_list(num)
+            expression = self.create_list(num)
         except SyntaxError:
             self.text.delete(0, END)
             self.text.insert(0, 'Syntax Error')
             return
-        check = operators[0]
-        i = 0
-
-        # Loop keeps running until every calculation is solved
-        while len(num_list) > 1:
-            check = operators[i]
-
-            # If i'th operator is found then calculates values around it and updates the list
-            if self.getIndex(num_list, check) != False:      
-                target = self.getIndex(num_list, check)
-                prev = num_list[target-1]
-                next =  num_list[target+1]
-                cal = self.calculate(prev, next, check)
-                num_list[target+1] = cal
-                del num_list[target-1:target+1]
-            else:
-                i += 1
+        
+        result = self.solve(expression)
         self.text.delete(0, END)
-        self.text.insert(0, str(num_list[0]))
+        self.text.insert(0, str(result[0]))
+
+    # Triggers after '=' button click
+    def solve(self, expression):
+        operators = ['/', '*', '-', '+']
+        stack = []
+        i = 0
+        prev_op = '+'
+
+        while True:
+            
+            # Ends final calculation
+            if i == len(expression):
+                return sum(stack), i
+            # Ends recursion
+            try:
+                if expression[i] == ')':
+                    return sum(stack), i
+            except:
+                self.text.delete(0, END)
+                self.text.insert(0, 'Syntax Error')
+                raise SyntaxError
+
+
+            # Starts recursion
+            if expression[i] == '(':
+                curr, index = self.solve(expression[i+1:])
+                i += index + 1      # 'i' at ending bracket position
+            else:
+                curr = expression[i]
+
+            # Handles calculation
+            if self.is_number(curr):
+                if prev_op == '+':
+                    stack.append(float(curr))
+                elif prev_op == '-':
+                    stack.append(-float(curr))
+                elif prev_op == '*':
+                    prev_digit = stack.pop()
+                    stack.append(prev_digit * float(curr))
+                elif prev_op == '/':
+                    prev_digit = stack.pop()
+                    stack.append(prev_digit / float(curr))
+                    
+            elif curr in operators:
+                prev_op = curr
+            
+            i += 1
+
+
+    def is_number(self, var):
+        temp = None
+        try:
+            temp = float(var)
+        except:
+            return False
+        return True
 
     # Returns index of an item in the list
     def getIndex(self, data, val):
@@ -119,13 +158,15 @@ class CalculatorGUI:
         output = []
         try:
             for char in string:
-                if char in operators:
-                    output.append(float(temp))
+                if char in operators or char == '(' or char == ')':
+                    if temp != '':
+                        output.append(temp)
+                        temp = ''
                     output.append(char)
-                    temp = ''
                     continue
                 temp += char
-            output.append(float(temp))
+            if temp != '':
+                output.append(temp)
             return list(output)
         except:
             raise SyntaxError
