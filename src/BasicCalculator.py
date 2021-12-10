@@ -105,24 +105,33 @@ class CalculatorGUI:
                 curr = expression[i]
 
             # Handles calculation
-            if self.is_number(curr):
-                if prev_op == '+':
-                    stack.append(float(curr))
-                elif prev_op == '-':
-                    stack.append(-float(curr))
-                elif prev_op == '*':
-                    prev_digit = stack.pop()
-                    stack.append(prev_digit * float(curr))
-                elif prev_op == '/':
-                    prev_digit = stack.pop()
-                    stack.append(prev_digit / float(curr))
-                    
-            elif curr in operators:
-                prev_op = curr
+            try:
+                if self.is_number(curr):
+                    if prev_op == '+':
+                        stack.append(float(curr))
+                    elif prev_op == '-':
+                        stack.append(-float(curr))
+                    elif prev_op == '*':
+                        prev_digit = stack.pop()
+                        stack.append(prev_digit * float(curr))
+                    elif prev_op == '/':
+                        prev_digit = stack.pop()
+                        stack.append(prev_digit / float(curr))
+                elif curr in operators:
+                    prev_op = curr
+            except ZeroDivisionError:
+                self.text.delete(0, END)
+                self.text.insert(0, 'Math Error')
+                raise SyntaxError
+            except IndexError:
+                self.text.delete(0, END)
+                self.text.insert(0, 'Syntax Error')
+                raise SyntaxError
+
             
             i += 1
 
-
+    # Checks if variable is numeric
     def is_number(self, var):
         temp = None
         try:
@@ -130,26 +139,6 @@ class CalculatorGUI:
         except:
             return False
         return True
-
-    # Returns index of an item in the list
-    def getIndex(self, data, val):
-        for index in range(len(data)):
-            if data[index] == val:
-                return index
-        return False
-
-    # Returns calculation of two values based on the operator
-    def calculate(self, num1, num2, op):
-        if op == '+':
-            return num1 + num2
-        elif op == '-':
-            return num1 - num2
-        elif op == '*':
-            return num1 * num2
-        elif op == '/':
-            return num1 / num2
-        else:
-            raise Exception('Syntax Error')
 
     # Converts a string into a list with appropriate data type
     def create_list(self, string):
